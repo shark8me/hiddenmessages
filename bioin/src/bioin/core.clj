@@ -33,9 +33,47 @@
   )
 
 ;;pattern to number
-(let [m (zipmap ["a" "c" "g" "t"] (iterate inc 0))]
-  (map #(vector %1 %2)
-       (reverse (map m (.split "gt" ""))) (iterate #(* % %) 4)))
+(defn par-to-num [pat]
+  (let [m (zipmap ["a" "c" "g" "t"] (iterate inc 0))
+        patvec (.split pat "")]
+    (apply +
+           (map #(* %1 %2)
+       (reverse (map m (.split pat "")))
+         (into [1] (take (count patvec) (iterate #(* % 4) 4)))))))
 
-(take 3 (into [0] (iterate #(* % 4 ) 4)))
-(into [0] (take 3 (iterate #(* % 4 ) 4)))
+;(par-to-num "gt")
+;(par-to-num "atgcaa")
+
+(defn pat-to-num [xin,k]
+  (let [m (zipmap (iterate inc 0) ["a" "c" "g" "t"])]
+(loop [x xin
+       acc []]
+  (let [[q r] (map #(% x 4) [quot rem])
+        nacc (conj acc (if (not= 0 r) r 0))]
+    (if (= k (count acc))
+      (clojure.string/join (map m (reverse acc)))
+      ;(reverse (take k nacc))
+      (recur q nacc))))))
+
+(pat-to-num 11 2)
+(pat-to-num 912 6)
+(pat-to-num 5437 8)
+(pat-to-num 0 2)
+
+(defn computefreq [pat,k]
+(let [n (int (Math/pow 4 k))
+      arr (map #(pat-to-num % k) (range n))
+      kmap (apply merge (map #(assoc {} % 0) arr))
+      mapwithscore (reduce (fn[acc k] (update-in acc [k] inc))
+        kmap (map clojure.string/join (partition k 1 (.split pat ""))))]
+   (clojure.string/join " " (map mapwithscore arr) )
+  ))
+
+(computefreq "acgcggctctgaaa" 2)
+(def k1 (computefreq "abc" 2))
+
+(reduce (fn[acc k] (update-in acc [k] inc))
+        k1 (map clojure.string/join (partition 2 1 (.split "acgcggctctgaaa" ""))))
+
+(def inp "cactcagtgctccgtactcgactgtacaaggacgagcactagatacctacgtaacatcccgtggtccacagttaacacctgggcaacctcgacgcgggggaccacgaccaagtgtcacgtggcatatcatccagagtttgatattagggcaatggtcaggagcaagctaggccgagtctctacttgagacccacacgctacaaggatttgcccaagctgaatgtggcagggtgtgacacgacacggcgcgggtcgtcgcttctaacaaccatgcaaacttaggtggcagttgttaagttggctttaatcgagaagtgggatcttagttcaacaggagtggctcccaaagaagggccagccctaggcctcctattatgatagaaacgttaggtggtgacagttggtctagtactgttgctcagacttgacttcaataatcttcatttacattcaagagagaaaaggacgtgcatcggtccattagtccgagtactatacgttgaaaggagcaccgtggcgggtcttccagggttggcattacgtagatgggtaaagctgcatcgcaggattgtatatctaagcacttccgtcacccagctgtctaggacttgcgcatcaaccataccaggccctcacagatgctatatgtactgctcaatgacaggggttcgcctcggtatgcgtccccgcgaggtatcaatatcgcgagacgtagcgtgatgttgtggctccgcaacg")
+(computefreq inp 7)
