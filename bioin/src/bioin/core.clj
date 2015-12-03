@@ -41,10 +41,14 @@
        (reverse (map m (.split pat "")))
          (into [1] (take (count patvec) (iterate #(* % 4) 4)))))))
 
-;(par-to-num "gt")
+(par-to-num "gt")
+(par-to-num "agt")
 ;(par-to-num "atgcaa")
 
-(defn pat-to-num [xin,k]
+(def fin (slurp "/home/kiran/Downloads/dataset_3010_2.txt"))
+(par-to-num (.toLowerCase (first (.split fin "\n"))))
+
+(defn num-to-pat [xin,k]
   (let [m (zipmap (iterate inc 0) ["a" "c" "g" "t"])]
 (loop [x xin
        acc []]
@@ -59,7 +63,15 @@
 (pat-to-num 912 6)
 (pat-to-num 5437 8)
 (pat-to-num 0 2)
+(pat-to-num 45 4)
 
+(def fin (slurp "/home/kiran/Downloads/dataset_3010_4.txt"))
+fin
+(let [[x y] (map #(Integer/parseInt %) (.split fin "\n"))]
+  (pat-to-num x y))
+(pat-to-num 6336 9)
+(pat-to-num 8359 8)
+(pat-to-num 8359 8)
 (defn computefreq [pat,k]
 (let [n (int (Math/pow 4 k))
       arr (map #(pat-to-num % k) (range n))
@@ -77,3 +89,23 @@
 
 (def inp "cactcagtgctccgtactcgactgtacaaggacgagcactagatacctacgtaacatcccgtggtccacagttaacacctgggcaacctcgacgcgggggaccacgaccaagtgtcacgtggcatatcatccagagtttgatattagggcaatggtcaggagcaagctaggccgagtctctacttgagacccacacgctacaaggatttgcccaagctgaatgtggcagggtgtgacacgacacggcgcgggtcgtcgcttctaacaaccatgcaaacttaggtggcagttgttaagttggctttaatcgagaagtgggatcttagttcaacaggagtggctcccaaagaagggccagccctaggcctcctattatgatagaaacgttaggtggtgacagttggtctagtactgttgctcagacttgacttcaataatcttcatttacattcaagagagaaaaggacgtgcatcggtccattagtccgagtactatacgttgaaaggagcaccgtggcgggtcttccagggttggcattacgtagatgggtaaagctgcatcgcaggattgtatatctaagcacttccgtcacccagctgtctaggacttgcgcatcaaccataccaggccctcacagatgctatatgtactgctcaatgacaggggttcgcctcggtatgcgtccccgcgaggtatcaatatcgcgagacgtagcgtgatgttgtggctccgcaacg")
 (computefreq inp 7)
+
+
+(let [st (.split "agt" "")
+      m (zipmap ["a" "c" "g" "t"] (iterate inc 0))]
+(loop [f1 st
+       acc []]
+   (if (empty? f1)
+     (let [k (reverse acc)]
+      ; (+ (first k) (apply + (map #(* %1 %2) (rest k) (iterate #(* % 4) 4)))))
+      ; (map #(vector %1 %2) (rest k) (iterate #(* % 4) 4)))
+     acc)
+     (recur (butlast f1) (conj acc (m (last f1)))))))
+
+
+(defn pat-to-num
+(let [st (.split "agt" "")
+      m (zipmap ["a" "c" "g" "t"] (iterate inc 0))
+      k (reverse (map m st))]
+  (+ (first k) (apply + (map * (rest k) (iterate #(* % 4) 4)))))
+
