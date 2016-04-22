@@ -1,6 +1,39 @@
-(ns bioin.core)
+(ns bioin.core
+  (:require [clojure.test :as t]))
 
 ;(def tst (slurp "/home/kiran/src/mooc/hiddenmessages/"))
+(t/with-test
+  (defn pattern-count
+    "count occurrances of needle in haystack, with sliding window of length k"
+    [needle haystack k ]
+    (->>(.split haystack "")
+        (map #(.toLowerCase %) )
+        (partition k 1 )
+        (map clojure.string/join)
+        (filter #(= (.toLowerCase needle) %))
+        count))
+  (t/is (= 3 (pattern-count "ACTAT" "ACAACTATGCATACTATCGGGAACTATCCT" 5))))
+
+(t/with-test
+  (defn frequent-words
+    "find frequent words in haystack, with length k. Returns a vector"
+    [haystack k]
+    (->>(.split haystack "")
+        (map #(.toLowerCase %) )
+        (partition k 1 )
+        (map clojure.string/join)
+        (map #(assoc {} % 1))
+        (reduce (partial merge-with +))
+        (reduce (fn [acc [k v]]
+                  (if (empty? acc)
+                    [v [k]]
+                    (cond
+                      (> v (acc 0)) [v [k]]
+                      (= v (acc 0)) [v (conj (acc 1) k)]
+                      :else acc))) [])
+        second))
+  (t/is (= ["ctat" "acta"]
+           (frequent-words "CAACTATGCATACTATCGGGAACTATCCT" 4))))
 
 (let [geno "AAAACGTCGAAAAA"
       k 2
