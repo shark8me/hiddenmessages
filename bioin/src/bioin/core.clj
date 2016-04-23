@@ -2,14 +2,25 @@
   (:require [clojure.test :as t]))
 
 ;(def tst (slurp "/home/kiran/src/mooc/hiddenmessages/"))
+
+(defn split-tl
+  [haystack]
+  (->>(.split haystack "")
+      (map #(.toLowerCase %))))
+
+(defn part-tl
+  "convert haystack to lower case and partition into a sliding window
+  that moves ahead by 1"
+  [haystack k]
+  (->> (split-tl haystack)
+       (partition k 1 )
+       (map clojure.string/join)))
+
 (t/with-test
   (defn pattern-count
     "count occurrances of needle in haystack, with sliding window of length k"
     [needle haystack k ]
-    (->>(.split haystack "")
-        (map #(.toLowerCase %) )
-        (partition k 1 )
-        (map clojure.string/join)
+    (->> (part-tl haystack k)
         (filter #(= (.toLowerCase needle) %))
         count))
   (t/is (= 3 (pattern-count "ACTAT" "ACAACTATGCATACTATCGGGAACTATCCT" 5))))
@@ -18,10 +29,7 @@
   (defn frequent-words
     "find frequent words in haystack, with length k. Returns a vector"
     [haystack k]
-    (->>(.split haystack "")
-        (map #(.toLowerCase %) )
-        (partition k 1 )
-        (map clojure.string/join)
+    (->>(part-tl haystack k)
         (map #(assoc {} % 1))
         (reduce (partial merge-with +))
         (reduce (fn [acc [k v]]
@@ -34,6 +42,29 @@
         second))
   (t/is (= ["ctat" "acta"]
            (frequent-words "CAACTATGCATACTATCGGGAACTATCCT" 4))))
+
+(t/with-test
+  (defn reverse-complement
+    "Chapter 1.3 step 2. reverse complement of a DNA string"
+    [inp]
+    (let [rmap  (zipmap ["a" "t" "c" "g"] ["t" "a" "g" "c"])]
+      (->> (split-tl inp)
+           (map rmap)
+           reverse
+           (map #(.toUpperCase %))
+           clojure.string/join)))
+  (t/is (= "ACCGGGTTTT"
+           (reverse-complement "AAAACCCGGT"))))
+
+(t/with-test
+  (defn index-finder
+    "pattern matching problem, chapter 1.3 step 5"
+    [needle haystack]
+    (let [sneed (.toLowerCase needle)]
+      (remove nil? (map #(if (= sneed %1) %2)
+                        (part-tl haystack (count needle)) (iterate inc 0)))))
+  (t/is (= '(1 3 9)
+           (index-finder "ATAT" "GATATATGCATATACTT"))))
 
 (let [geno "AAAACGTCGAAAAA"
       k 2
