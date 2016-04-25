@@ -66,6 +66,77 @@
   (t/is (= '(1 3 9)
            (index-finder "ATAT" "GATATATGCATATACTT"))))
 
+(t/with-test
+  (defn find-kmer-wfreq
+    "find kmer with freq greater than or equal to t"
+    [k t haystack ]
+    (->> (part-tl haystack k)
+         frequencies
+         (filter (fn[[k v]] (>= v t)))
+         (map first)
+         set))
+  (t/is (= #{"cgaca"}
+           (find-kmer-wfreq 5 4 "cggactcgacagatgtgaagaacgacaatgtgaagactcgacacgacaga" ))))
+
+(t/with-test
+  (defn clump-finder
+    [haystack  k L t]
+    (let [lseq (map clojure.string/join (partition L 1 (split-tl haystack)))]
+      (->> lseq
+           (map (partial find-kmer-wfreq k t))
+           (reduce into #{}))))
+  (let [haystack "CGGACTCGACAGATGTGAAGAACGACAATGTGAAGACTCGACACGACAGAGTGAAGAGAAGAGGAAACATTGTAA"
+        k 5 L 50 t 4]
+    (t/is (= #{"cgaca" "gaaga"}
+             (clump-finder haystack k L t)))))
+
+;takes a long time
+;(let [hays (slurp "/home/kiran/Documents/E-coli.txt")]
+;  (clump-finder hays 9 500 3))
+
+(t/with-test
+  ;;pattern to number
+  (defn pat-to-num
+    "pattern to number Chapter 1.5, step 2 "
+    [pat]
+    (let [m (zipmap ["a" "c" "g" "t"] (iterate inc 0))
+          patvec (split-tl pat)]
+      (apply + (map * (reverse (map m patvec))
+                    (into [1] (take (count patvec) (iterate #(* % 4) 4)))))))
+  (t/is (= 11 (pat-to-num "GT")))
+  (t/is (= 11 (pat-to-num "AGT")))
+  (t/is (= 912 (pat-to-num "ATGCAA"))))
+
+;(def fin (slurp "/home/kiran/Downloads/dataset_3010_2.txt"))
+(t/with-test
+  (defn num-to-pat
+    "number to pattern, chapter 1.5, step 3"
+    [xin,k]
+    (let [m (zipmap (iterate inc 0) ["a" "c" "g" "t"])]
+      (loop [x xin
+             acc []]
+        (let [[q r] (map #(% x 4) [quot rem])
+              nacc (conj acc (if (not= 0 r) r 0))]
+          (if (= k (count acc))
+            (clojure.string/join (map m (reverse acc)))
+            ;(reverse (take k nacc))
+            (recur q nacc))))))
+  (t/is (= "cccattc" (num-to-pat 5437 7)))
+  (t/is (= "gt" (num-to-pat 11 2)))
+  (t/is (= "agtc" (num-to-pat 45 4))))
+
+(t/with-test
+  (defn computing-frequencies
+    "1.5 step 5 "
+    [ haystack k]
+    (let [pt (map pat-to-num (part-tl haystack k))
+          freqmap (frequencies pt)]
+      (map #(get freqmap % 0) (range (int (Math/pow 4 k))))))
+  (let [ haystack "ACGCGGCTCTGAAA" k 2
+         res [2 1 0 0 0 0 2 2 1 2 1 0 0 1 1 0]]
+    (t/is (= res (computing-frequencies haystack k)))))
+
+(comment
 (let [geno "AAAACGTCGAAAAA"
       k 2
       l 4
@@ -96,40 +167,7 @@
 (defn isvalid [lst k l t]
   )
 
-;;pattern to number
-(defn par-to-num [pat]
-  (let [m (zipmap ["a" "c" "g" "t"] (iterate inc 0))
-        patvec (.split pat "")]
-    (apply +
-           (map #(* %1 %2)
-       (reverse (map m (.split pat "")))
-         (into [1] (take (count patvec) (iterate #(* % 4) 4)))))))
-
-(par-to-num "gt")
-(par-to-num "agt")
-;(par-to-num "atgcaa")
-
-(def fin (slurp "/home/kiran/Downloads/dataset_3010_2.txt"))
-(par-to-num (.toLowerCase (first (.split fin "\n"))))
-
-(defn num-to-pat [xin,k]
-  (let [m (zipmap (iterate inc 0) ["a" "c" "g" "t"])]
-(loop [x xin
-       acc []]
-  (let [[q r] (map #(% x 4) [quot rem])
-        nacc (conj acc (if (not= 0 r) r 0))]
-    (if (= k (count acc))
-      (clojure.string/join (map m (reverse acc)))
-      ;(reverse (take k nacc))
-      (recur q nacc))))))
-
-(pat-to-num 11 2)
-(pat-to-num 912 6)
-(pat-to-num 5437 8)
-(pat-to-num 0 2)
-(pat-to-num 45 4)
-
-(def fin (slurp "/home/kiran/Downloads/dataset_3010_4.txt"))
+;(def fin (slurp "/home/kiran/Downloads/dataset_3010_4.txt"))
 fin
 (let [[x y] (map #(Integer/parseInt %) (.split fin "\n"))]
   (pat-to-num x y))
@@ -171,5 +209,6 @@ fin
 (let [st (.split "agt" "")
       m (zipmap ["a" "c" "g" "t"] (iterate inc 0))
       k (reverse (map m st))]
-  (+ (first k) (apply + (map * (rest k) (iterate #(* % 4) 4)))))
+  (+ (first k) (apply + (map * (rest k) (iterate #(* % 4) 4))))))
 
+)
